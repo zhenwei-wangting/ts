@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>三色墨水屏图像处理</title>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; }
+    canvas { border: 1px solid black; margin: 10px; }
+  </style>
+</head>
+<body>
+  <h1>三色墨水屏图像处理与发送</h1>
+  <input type="file" id="imageInput" accept="image/*">
+  <br>
+  <label>宽度: <input type="number" id="widthInput" value="600"></label>
+  <label>高度: <input type="number" id="heightInput" value="448"></label>
+  <button id="processButton">处理图像</button>
+  <br>
+  <canvas id="canvas"></canvas>
+  <br>
+  <button id="connectButton">连接MQTT服务器</button>
+  <button id="sendButton" disabled>发送数据</button>
+  <p id="status"></p>
+
+  <script>
+    const MQTT_SERVER = "wss://test.mosquitto.org:8081";
+    const MQTT_TOPIC = "esp32/image";
+
+    let mqttClient;
+    let blackData = [];
+    let redData = [];
+    let canvas = document.getElementById('canvas');
+    let ctx = canvas.getContext('2d');
+
+    document.getElementById('processButton').addEventListener('click', () => {
+      const file = document.getElementById('imageInput').files[0];
+      const width = parseInt(document.getElementById('widthInput').value);
+      const height = parseInt(document.getElementById('heightInput').value);
+
+      if (!file) {
+        alert('请上传一张图片！');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // 抖动算法处理
+          const imageData = ctx.getImageData(0, 0, width, height);
+          const data = imageData.data;
+          blackData = [];
+          redData = [];
+
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const avg = (r + g + b) / 3;
+
+            if (avg < 128) {
+              blackData.push(1); // 黑色
+              redData.push(0);
+            } else if (r > 200 && g < 100 && b < 100) {
+              blackData.push(0);
+              redData.push(1); // 红色
+            } else {
+              blackData.push(0);
+              redData.push(0); // 白色
+            }
+          }
+
+          document.getElementById('status').textContent = '图像处理完成';
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.getElementById('connectButton').addEventListener('click', () => {
+      mqttClient = mqtt.connect(MQTT_SERVER);
+      mqttClient.on('connect', () => {
+        document.getElementById('status').textContent = 'MQTT 连接成功';
+        document.getElementById('sendButton').disabled = false;
+      });
+      mqttClient.on('error', (err) => {
+        document.getElementById('status').textContent = `MQTT 连接失败: ${err}`;
+      });
+    });
+
+    document.getElementById('sendButton').addEventListener('click', () => {
+      if (!mqttClient || !mqttClient.connected) {
+        alert('请先连接到 MQTT 服务器');
+        return;
+      }
+
+      const width = canvas.width;
+      const height = canvas.height;
+      const payload = JSON.stringify({
+        width,
+        height,
+        blackData,
+        redData,
+      });
+
+      mqttClient.publish(MQTT_TOPIC, payload, () => {
+        document.getElementById('status').textContent = '数据已发送';
+      });
+    });
+  </script>
+</body>
+</html>
