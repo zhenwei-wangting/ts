@@ -1,159 +1,132 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>微博热搜榜</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-            margin: 0;
-            padding: 0;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Falling Hearts</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap');
 
-        .container {
-            width: 80%;
-            margin: 50px auto;
-            background-color: white;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
-            padding: 20px;
-        }
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #ffeef0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+      font-family: 'Patrick Hand', cursive;
+    }
 
-        h1 {
-            text-align: center;
-            color: #e60012;
-            font-size: 2rem;
-            margin-bottom: 20px;
-        }
+    button {
+      padding: 10px 20px;
+      font-size: 1.5em;
+      border: none;
+      background-color: #ff6b81;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      z-index: 10;
+      font-family: 'Patrick Hand', cursive;
+    }
 
-        .search-list {
-            list-style-type: none;
-            padding: 0;
-            margin: 0;
-        }
+    .heart {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background-color: red;
+      transform: rotate(45deg);
+      animation: fall linear infinite;
+    }
 
-        .search-item {
-            background-color: #fff;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 10px 0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: transform 0.3s ease;
-        }
+    .heart::before,
+    .heart::after {
+      content: "";
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background-color: red;
+      border-radius: 50%;
+    }
 
-        .search-item:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-        }
+    .heart::before {
+      top: -10px;
+      left: 0;
+    }
 
-        .rank {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #e60012;
-        }
+    .heart::after {
+      left: -10px;
+      top: 0;
+    }
 
-        .search-title {
-            font-size: 1.2rem;
-            color: #333;
-        }
+    @keyframes fall {
+      0% {
+        top: -20px;
+        opacity: 1;
+      }
+      100% {
+        top: 100vh;
+        opacity: 0;
+      }
+    }
 
-        .update-button {
-            display: block;
-            margin: 30px auto;
-            background-color: #e60012;
-            color: white;
-            padding: 10px 20px;
-            font-size: 1rem;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        .update-button:hover {
-            background-color: #cc0010;
-        }
-
-        .footer {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 0.9rem;
-            color: #888;
-        }
-
-    </style>
+    #text-box {
+      display: none;
+      margin-top: 30px;
+      min-width: 300px;
+      min-height: 100px;
+      padding: 20px;
+      border: 2px solid #ff6b81;
+      border-radius: 12px;
+      font-size: 2em;
+      font-family: 'Patrick Hand', cursive;
+      resize: none;
+      overflow: hidden;
+      box-sizing: border-box;
+      background-color: #fff0f5;
+    }
+  </style>
 </head>
 <body>
+  <button onclick="startFallingHearts()">同意甄威是大帅哥就点这里</button>
+  <textarea id="text-box" placeholder="在这里写点什么... 📝" oninput="autoResize(this)">最美丽最可爱的宝宝，能再次遇到宝宝是我这辈子最幸运的事，无论宝宝遇到什么困难，我都是宝宝最坚强的后盾，我也会永远爱着宝宝。</textarea>
 
-    <div class="container">
-        <h1>微博热搜榜</h1>
+  <script>
+    let heartInterval;
+    let textBoxVisible = false;
 
-        <ul id="search-list" class="search-list">
-            <!-- 热搜内容将在这里动态生成 -->
-        </ul>
+    function createHeart() {
+      const heart = document.createElement('div');
+      heart.classList.add('heart');
+      heart.style.left = Math.random() * window.innerWidth + 'px';
+      heart.style.animationDuration = (2 + Math.random() * 3) + 's';
+      document.body.appendChild(heart);
 
-        <button class="update-button" onclick="updateSearchList()">更新热搜</button>
+      setTimeout(() => {
+        heart.remove();
+      }, 5000);
+    }
 
-        <div class="footer">
-            <p>数据由模拟生成，页面仅供展示。</p>
-        </div>
-    </div>
+    function startFallingHearts() {
+      if (!heartInterval) {
+        heartInterval = setInterval(createHeart, 100);
+      }
+      if (!textBoxVisible) {
+        const textBox = document.getElementById('text-box');
+        textBox.style.display = 'block';
+        autoResize(textBox);
+        textBoxVisible = true;
+      }
+    }
 
-    <script>
-        // 模拟的热搜内容
-        const searchData = [
-            "张艺兴新专辑上线，粉丝疯狂打call！",
-            "某大明星微博账号被黑，网友呼吁维权",
-            "2024年北京冬奥会吉祥物正式发布！",
-            "《长安十二时辰》导演透露新剧拍摄计划",
-            "地铁一号线发生小规模设备故障，交通恢复正常",
-            "李佳琦直播间秒售罄，网友称其为‘购物神’",
-            "中国互联网发展大会即将召开，吸引全球目光",
-            "‘吃鸡’游戏迎来新版本，玩家期待已久的功能终于上线",
-            "2024年夏季电影档期影片海报曝光，预售票房火爆",
-            "可口可乐宣布将推出新口味，网友纷纷猜测"
-        ];
-
-        // 获取热搜列表的容器
-        const searchListElement = document.getElementById("search-list");
-
-        // 更新热搜列表
-        function updateSearchList() {
-            // 清空当前列表
-            searchListElement.innerHTML = "";
-
-            // 随机选择 10 条热搜
-            const selectedData = getRandomSearchData(10);
-
-            // 动态生成热搜项
-            selectedData.forEach((item, index) => {
-                const listItem = document.createElement("li");
-                listItem.classList.add("search-item");
-                listItem.innerHTML = `
-                    <span class="rank">${index + 1}</span>
-                    <span class="search-title">${item}</span>
-                `;
-                searchListElement.appendChild(listItem);
-            });
-        }
-
-        // 随机选择n条热搜数据
-        function getRandomSearchData(n) {
-            const shuffled = searchData.sort(() => 0.5 - Math.random());
-            return shuffled.slice(0, n);
-        }
-
-        // 初始加载时生成热搜
-        window.onload = updateSearchList;
-
-        // 定时更新热搜，每10秒自动刷新一次
-        setInterval(updateSearchList, 10000);
-    </script>
-
+    function autoResize(textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = textarea.scrollHeight + 'px';
+      textarea.style.width = 'auto';
+      textarea.style.width = textarea.scrollWidth + 20 + 'px';
+    }
+  </script>
 </body>
 </html>
